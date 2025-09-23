@@ -1,0 +1,67 @@
+import sys
+import matplotlib.pyplot as plt
+import itertools
+
+def parse_output(text):
+    files = []
+    cur_points = []
+    cur_name = None
+    for line in text.splitlines():
+        if line.startswith('file: '):
+            if cur_name and cur_points:
+                files.append((cur_name, cur_points))
+            cur_name = line[6:].strip()
+            cur_points = []
+        elif line == 'group,x,y' or not line.strip():
+            continue
+        else:
+            try:
+                group, x, y = line.strip().split(',')
+                cur_points.append((group, int(x), int(y)))
+            except Exception as e:
+                raise RuntimeError(f'Ошибка парсинга строки: \"{line}\". Причина: {e}')
+    if cur_name and cur_points:
+        files.append((cur_name, cur_points))
+    return files
+
+def main():
+    try:
+        text = sys.stdin.read()
+        files = parse_output(text)
+        if not files:
+            print("Нет данных для построения графика!", file=sys.stderr)
+            sys.exit(3)
+
+        plt.figure(figsize=(8, 6))
+        color_cycle = itertools.cycle(plt.cm.tab20.colors)
+
+        legend_labels = []
+        for file_idx, (fname, points) in enumerate(files):
+            # Для каждой группы в файле
+            groups = {}
+            for group, x, y in points:
+                groups.setdefault(group, {'x': [], 'y': []})
+                groups[group]['x'].append(x)
+                groups[group]['y'].append(y)
+            for group, data in groups.items():
+                color = next(color_cycle)
+                label = f"{fname}:{group}"
+                plt.scatter(data['x'], data['y'], label=label, color=color, edgecolors='black', alpha=0.7)
+                legend_labels.append(label)
+
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.title('Точки по файлам и группам')
+        plt.legend(title="Файл:Группа", bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.tight_layout()
+        plt.savefig('points_summary.png')
+        plt.close()
+        print("Сохранён график: points_summary.png")
+
+        sys.exit(0)
+    except Exception as ex:
+        print(f"Ошибка: {ex}", file=sys.stderr)
+        sys.exit(2)
+
+if __name__ == "__main__":
+    main()
