@@ -21,6 +21,7 @@ pip install matplotlib
 
 2. **Запуск анализа файлов**
     ```bash
+    # runrunrun.bat для Windows
     bash run_points.sh file1.txt file2.bin file3.json
     ```
     - Скрипт передаёт список файлов C++ программе и визуализирует их через Python.
